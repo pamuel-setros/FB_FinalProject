@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>12% Rule Analysis - Cleveland Browns</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            padding: 30px 20px;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-card h3 {
+            color: #666;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        
+        .stat-card .value {
+            font-size: 2.5em;
+            color: #333;
+            font-weight: bold;
+        }
+        
+        .stat-card.accuracy .value {
+            color: #2ecc71;
+        }
+        
+        .stat-card.wins .value {
+            color: #3498db;
+        }
+        
+        .stat-card.losses .value {
+            color: #e74c3c;
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 1200px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            min-height: 500px;
+        }
+        
+        .chart-container h2 {
+            color: #333;
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-size: 1.2em;
+        }
+        
+        footer {
+            text-align: center;
+            color: white;
+            margin-top: 40px;
+            padding: 20px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏈 12% Rule Analysis</h1>
+            <p>Cleveland Browns 2024 Season Performance Analysis</p>
+        </header>
+        
+        <div class="stats-grid">
+            <div class="stat-card total">
+                <h3>Total Games</h3>
+                <div class="value" id="total-games">-</div>
+            </div>
+            <div class="stat-card wins">
+                <h3>Wins</h3>
+                <div class="value" id="wins">-</div>
+            </div>
+            <div class="stat-card losses">
+                <h3>Losses</h3>
+                <div class="value" id="losses">-</div>
+            </div>
+            <div class="stat-card accuracy">
+                <h3>12% Rule Accuracy</h3>
+                <div class="value" id="accuracy">-</div>
+            </div>
+        </div>
+        
+        <div class="charts-grid">
+            <div class="chart-container">
+                <h2>Scatter Plot Analysis</h2>
+                <div id="scatter-plot" class="loading">Loading chart...</div>
+            </div>
+            
+            <div class="chart-container">
+                <h2>Prediction Accuracy</h2>
+                <div id="accuracy-chart" class="loading">Loading chart...</div>
+            </div>
+            
+            <div class="chart-container">
+                <h2>Score Distribution</h2>
+                <div id="distribution-chart" class="loading">Loading chart...</div>
+            </div>
+            
+            <div class="chart-container full-width">
+                <h2>Weekly Comparison</h2>
+                <div id="weekly-chart" class="loading">Loading chart...</div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Interactive visualization of the 12% Rule effectiveness in predicting game outcomes</p>
+        </footer>
+    </div>
+    
+    <script>
+        // Parse CSV data
+        function parseCSV(data) {
+            const lines = data.trim().split('\n');
+            const headers = lines[0].split(',');
+            const rows = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const obj = {};
+                const currentLine = lines[i].split(',');
+                
+                for (let j = 0; j < headers.length; j++) {
+                    obj[headers[j].trim()] = currentLine[j] ? currentLine[j].trim() : '';
+                }
+                rows.push(obj);
+            }
+            return rows;
+        }
+        
+        // Load and process data
+        fetch('games.csv')
+            .then(response => response.text())
+            .then(data => {
+                const games = parseCSV(data);
+                
+                // Update stats
+                const totalGames = games.length;
+                const wins = games.filter(g => g.Win_Loss_Bool == 1).length;
+                const losses = totalGames - wins;
+                
+                // Calculate accuracy
+                const correctPredictions = games.filter(g => {
+                    const brownsHigher = parseFloat(g['12_Percent_Score']) > parseFloat(g['Opp_12_Percent_Score']);
+                    const brownsWon = g.Win_Loss_Bool == 1;
+                    return brownsHigher === brownsWon;
+                }).length;
+                const accuracy = (correctPredictions / totalGames * 100).toFixed(1);
+                
+                document.getElementById('total-games').textContent = totalGames;
+                document.getElementById('wins').textContent = wins;
+                document.getElementById('losses').textContent = losses;
+                document.getElementById('accuracy').textContent = accuracy + '%';
+                
+                // Create Scatter Plot
+                const scatterX = games.map(g => parseFloat(g['12_Percent_Score']));
+                const scatterY = games.map(g => parseFloat(g['Opp_12_Percent_Score']));
+                const colors = games.map(g => g.Win_Loss_Bool == 1 ? 'green' : 'red');
+                const text = games.map(g => `Week ${g.Week}<br>vs ${g.Opponent}<br>Result: ${g.Result}`);
+                
+                const scatterTrace = {
+                    x: scatterX,
+                    y: scatterY,
+                    mode: 'markers',
+                    marker: {
+                        size: 10,
+                        color: colors,
+                        opacity: 0.7,
+                        line: {width: 1, color: 'white'}
+                    },
+                    text: text,
+                    hovertemplate: '<b>%{text}</b><br>Browns 12%: %{x:.2f}<br>Opponent 12%: %{y:.2f}<extra></extra>'
+                };
+                
+                const maxVal = Math.max(...scatterX, ...scatterY);
+                const refLine = {
+                    x: [0, maxVal],
+                    y: [0, maxVal],
+                    mode: 'lines',
+                    line: {dash: 'dash', color: 'gray'},
+                    name: 'Equal Score Line',
+                    hoverinfo: 'skip'
+                };
+                
+                const scatterLayout = {
+                    title: 'Browns 12% Score vs Opponent 12% Score<br><sub>Green = Win | Red = Loss</sub>',
+                    xaxis: {title: 'Browns 12% Score'},
+                    yaxis: {title: 'Opponent 12% Score'},
+                    hovermode: 'closest',
+                    plot_bgcolor: 'rgba(240,240,240,0.5)',
+                    height: 600
+                };
+                
+                Plotly.newPlot('scatter-plot', [scatterTrace, refLine], scatterLayout, {responsive: true});
+                
+                // Create Accuracy Chart
+                const brownsHigherCount = games.filter(g => parseFloat(g['12_Percent_Score']) > parseFloat(g['Opp_12_Percent_Score'])).length;
+                const accuracyTrace = {
+                    x: ['Predicted Wins', 'Actual Wins', 'Correct Predictions'],
+                    y: [brownsHigherCount, wins, correctPredictions],
+                    type: 'bar',
+                    marker: {color: ['#1f77b4', '#2ca02c', '#ff7f0e']},
+                    text: [brownsHigherCount, wins, correctPredictions],
+                    textposition: 'auto'
+                };
+                
+                const accuracyLayout = {
+                    title: `12% Rule Accuracy: ${accuracy}%<br><sub>Games where higher 12% score predicted the winner</sub>`,
+                    yaxis: {title: 'Number of Games'},
+                    hovermode: 'x unified',
+                    height: 500
+                };
+                
+                Plotly.newPlot('accuracy-chart', [accuracyTrace], accuracyLayout, {responsive: true});
+                
+                // Create Weekly Comparison
+                const weeklyTrace1 = {
+                    x: games.map(g => g.Week),
+                    y: games.map(g => parseFloat(g['12_Percent_Score'])),
+                    name: 'Browns 12% Score',
+                    type: 'bar',
+                    marker: {color: '#8B4513'},
+                    hovertemplate: 'Week %{x}<br>Browns: %{y:.2f}<extra></extra>'
+                };
+                
+                const weeklyTrace2 = {
+                    x: games.map(g => g.Week),
+                    y: games.map(g => parseFloat(g['Opp_12_Percent_Score'])),
+                    name: 'Opponent 12% Score',
+                    type: 'bar',
+                    marker: {color: '#FFB6C1'},
+                    hovertemplate: 'Week %{x}<br>Opponent: %{y:.2f}<extra></extra>'
+                };
+                
+                const weeklyLayout = {
+                    title: 'Weekly 12% Score Comparison',
+                    xaxis: {title: 'Week'},
+                    yaxis: {title: '12% Score'},
+                    barmode: 'group',
+                    hovermode: 'x unified',
+                    height: 500
+                };
+                
+                Plotly.newPlot('weekly-chart', [weeklyTrace1, weeklyTrace2], weeklyLayout, {responsive: true});
+                
+                // Create Distribution Chart
+                const winScores = games.filter(g => g.Win_Loss_Bool == 1).map(g => parseFloat(g['12_Percent_Score']));
+                const lossScores = games.filter(g => g.Win_Loss_Bool == 0).map(g => parseFloat(g['12_Percent_Score']));
+                
+                const distTrace1 = {
+                    x: winScores,
+                    name: 'Wins',
+                    type: 'histogram',
+                    marker: {color: 'green'},
+                    opacity: 0.7,
+                    nbinsx: 8
+                };
+                
+                const distTrace2 = {
+                    x: lossScores,
+                    name: 'Losses',
+                    type: 'histogram',
+                    marker: {color: 'red'},
+                    opacity: 0.7,
+                    nbinsx: 8
+                };
+                
+                const distLayout = {
+                    title: 'Distribution of Browns 12% Scores by Outcome',
+                    xaxis: {title: '12% Score'},
+                    yaxis: {title: 'Frequency'},
+                    barmode: 'overlay',
+                    hovermode: 'x unified',
+                    height: 500
+                };
+                
+                Plotly.newPlot('distribution-chart', [distTrace1, distTrace2], distLayout, {responsive: true});
+            })
+            .catch(error => {
+                console.error('Error loading CSV:', error);
+                document.querySelector('.loading').innerHTML = 'Error loading data. Make sure games.csv is in the same directory.';
+            });
+    </script>
+</body>
+</html>
