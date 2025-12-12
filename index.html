@@ -3,47 +3,104 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Noisy 12% Rule Dashboard</title>
+  <title>Cleveland Browns 12% Rule Dashboard</title>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <style>
-    body{font-family:Inter,Segoe UI,Helvetica,Arial; background:#f4f7fb; margin:0;padding:24px}
+    body{font-family:Inter,Segoe UI,Helvetica,Arial;background:#f5f1e8;margin:0;padding:24px;color:#333}
     .container{max-width:1200px;margin:0 auto}
-    header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
-    h1{font-size:20px;margin:0}
+    header{display:flex;align-items:center;gap:16px;margin-bottom:18px;padding:16px;background:linear-gradient(135deg,#311C15,#1a0e09);border-radius:8px;color:white;box-shadow:0 6px 18px rgba(49,28,21,0.2)}
+    h1{font-size:24px;margin:0;color:#FF6600;font-weight:700}
+    .small{color:#999;font-size:13px}
+    header .small{color:#ddd}
     .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
-    .card{background:white;border-radius:8px;padding:12px;box-shadow:0 6px 18px rgba(24,39,75,0.06)}
-    .stat{font-size:28px;font-weight:700}
-    .small{color:#666;font-size:13px}
-    .description{font-size:12px;color:#555;line-height:1.5;margin-top:12px;padding-top:8px;border-top:1px solid #eee}
+    .card{background:white;border-radius:8px;padding:12px;box-shadow:0 6px 18px rgba(49,28,21,0.08);border-left:4px solid #FF6600}
+    .stat{font-size:28px;font-weight:700;color:#311C15}
+    .description{font-size:12px;color:#666;line-height:1.5;margin-top:12px;padding-top:8px;border-top:1px solid #eee}
     #table-wrap{overflow:auto}
-    footer{margin-top:18px;color:#666;font-size:13px;text-align:center}
-    .error{color:red;padding:12px;background:#fee;border-radius:4px;}
+    footer{margin-top:18px;color:#999;font-size:13px;text-align:center;padding:16px;background:#311C15;color:#FF6600;border-radius:6px}
+    .error{color:#8B0000;padding:12px;background:#ffe6e6;border-radius:4px;border-left:4px solid #8B0000}
     .loading{color:#999;padding:12px}
-    .summary{background:#e3f2fd;border-left:4px solid #1976d2;padding:16px;border-radius:4px;margin-bottom:24px}
-    .summary h2{margin:0 0 12px 0;color:#1565c0;font-size:16px}
+    .summary{background:#FFF3E0;border-left:4px solid #FF6600;padding:16px;border-radius:4px;margin-bottom:24px;box-shadow:0 2px 8px rgba(255,102,0,0.1)}
+    .summary h2{margin:0 0 12px 0;color:#311C15;font-size:16px;font-weight:700}
     .summary p{margin:6px 0;font-size:14px;color:#333;line-height:1.6}
+    .summary a{color:#FF6600;text-decoration:none;font-weight:600}
+    .summary a:hover{text-decoration:underline}
+    .week-navigator{background:linear-gradient(135deg,#311C15,#4a2c1d);color:white;padding:24px;border-radius:8px;margin-bottom:24px;text-align:center;box-shadow:0 6px 18px rgba(49,28,21,0.15)}
+    .week-display{font-size:48px;font-weight:700;margin:16px 0;animation:pulse 0.6s ease-in-out;color:#FF6600}
+    .week-info{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0}
+    .week-stat{background:rgba(255,102,0,0.1);padding:12px;border-radius:6px;font-size:13px;backdrop-filter:blur(10px);border:1px solid rgba(255,102,0,0.2)}
+    .week-stat strong{display:block;font-size:18px;margin-bottom:4px;color:#FF6600}
+    .week-controls{display:flex;justify-content:center;gap:12px;margin:16px 0;flex-wrap:wrap}
+    .nav-btn{background:#FF6600;color:white;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;font-weight:600;transition:all 0.2s;font-size:14px;box-shadow:0 2px 6px rgba(255,102,0,0.3)}
+    .nav-btn:hover{transform:scale(1.05);box-shadow:0 4px 12px rgba(255,102,0,0.4);background:#e55a00}
+    .nav-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+    .week-slider{width:100%;max-width:400px;margin:0 auto;accent-color:#FF6600}
+    @keyframes slideInLeft {from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:translateX(0)}}
+    .week-info > div{animation:slideInLeft 0.4s ease-out}
     @keyframes slideIn {from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes pulse {0%,100%{box-shadow:0 6px 18px rgba(24,39,75,0.06)}50%{box-shadow:0 10px 28px rgba(24,39,75,0.12)}}
+    @keyframes pulse {0%,100%{box-shadow:0 6px 18px rgba(49,28,21,0.08)}50%{box-shadow:0 10px 28px rgba(49,28,21,0.15)}}
     .card{animation:slideIn 0.5s ease-out;transition:all 0.3s ease}
-    .card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(24,39,75,0.15);cursor:pointer}
+    .card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(49,28,21,0.15);cursor:pointer}
     .stat-card{position:relative}
-    .stat-card::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,transparent,rgba(255,255,255,0.1));border-radius:8px;pointer-events:none}
-    table tbody tr:hover{background-color:#f9f9f9 !important}
-    .filter-btn{background:#1976d2;color:white;padding:6px 12px;border:none;border-radius:4px;cursor:pointer;font-size:12px;margin:8px 4px 0 0;transition:all 0.2s}
-    .filter-btn:hover{background:#1565c0;transform:scale(1.05)}
-    .filter-btn.active{background:#1565c0;box-shadow:0 0 8px rgba(25,118,210,0.4)}
+    .stat-card::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,transparent,rgba(255,102,0,0.05));border-radius:8px;pointer-events:none}
+    table tbody tr:hover{background-color:#fff9f0 !important}
+    table tbody tr td{padding:8px}
+    table thead th{background:#311C15;color:#FF6600;padding:10px;font-weight:600;text-align:left}
+    .filter-btn{background:#FF6600;color:white;padding:6px 12px;border:none;border-radius:4px;cursor:pointer;font-size:12px;margin:8px 4px 0 0;transition:all 0.2s;font-weight:600}
+    .filter-btn:hover{background:#e55a00;transform:scale(1.05);box-shadow:0 2px 6px rgba(255,102,0,0.3)}
+    .filter-btn.active{background:#311C15;box-shadow:0 0 8px rgba(49,28,21,0.4)}
   </style>
 </head>
 <body>
   <div class="container">
     <header>
       <div>
-        <h1>12% Rule (Noisy) — Interactive Dashboard</h1>
+        <h1>Cleveland Browns 12% Rule Dashboard</h1>
         <div class="small">Data source: `noisy_12p_rule.csv` — served via Live Server</div>
+        <div style="margin-top:12px;padding:12px;background:rgba(255,255,255,0.1);border-radius:4px;font-size:13px;color:#ddd;font-family:monospace;line-height:1.6;">
+          <strong style="color:#FF6600;">The 12% Rule Formula:</strong><br>
+          (Sacks + Penalties + Drops + Turnovers) ÷ Total Plays ≤ 12%
+        </div>
       </div>
     </header>
 
     <div id="status" class="loading">Loading data...</div>
+
+    <div id="week-navigator" class="week-navigator" style="display:none;">
+      <h2 style="margin:0 0 8px 0;font-size:18px;">Browse Games Week by Week</h2>
+      <div class="week-display">Week <span id="current-week">1</span></div>
+      <div class="week-info">
+        <div class="week-stat">
+          Opponent<br/>
+          <strong id="week-opponent">—</strong>
+        </div>
+        <div class="week-stat">
+          Result<br/>
+          <strong id="week-result" style="font-size:20px">—</strong>
+        </div>
+        <div class="week-stat">
+          Browns 12%<br/>
+          <strong id="week-browns-12">—</strong>
+        </div>
+        <div class="week-stat">
+          Opp 12%<br/>
+          <strong id="week-opp-12">—</strong>
+        </div>
+        <div class="week-stat">
+          Rule Prediction<br/>
+          <strong id="week-prediction">—</strong>
+        </div>
+        <div class="week-stat">
+          Status<br/>
+          <strong id="week-status" style="font-size:16px">—</strong>
+        </div>
+      </div>
+      <div class="week-controls">
+        <button class="nav-btn" onclick="previousWeek()">← Previous</button>
+        <input type="range" id="week-slider" class="week-slider" min="1" max="17" value="1" oninput="goToWeek(this.value)">
+        <button class="nav-btn" onclick="nextWeek()">Next →</button>
+      </div>
+    </div>
 
     <div id="summary-section" class="summary" style="display:none;">
       <h2>Executive Summary</h2>
@@ -102,6 +159,14 @@
         <div class="small">Performance Comparison: Wins vs Losses</div>
         <div id="winning-stats" style="height:360px"></div>
         <div class="description">This grouped bar chart compares average critical error statistics between games the Browns won and games they lost. Notice how sacks and turnovers spike dramatically in losses, while penalty counts remain consistent. This visualization demonstrates the impact of defensive pressures on game outcomes. It is also interesting that the Browns had more penalties when we won. Could that mean we played harder?</div>
+      </div>
+    </div>
+
+    <div class="grid" style="margin-top:16px;display:none;" id="cleanliness-grid">
+      <div class="card">
+        <div class="small">Play Cleanliness: Relative Performance vs Opponent</div>
+        <div id="cleanliness-chart" style="height:360px"></div>
+        <div class="description">This visualization compares the Browns' play "cleanliness" relative to their opponents using the 12% Rule metric. Games where the Browns had a lower 12% score (cleaner play) versus their opponent are compared against games where the Browns had a higher 12% score (dirtier play). This reveals the strong correlation between relative cleanliness and winning: when the Browns play cleaner than their opponent, they have a significantly higher chance of victory.</div>
       </div>
     </div>
 
@@ -247,6 +312,20 @@ ORDER BY Week;</pre>
 FROM browns_opp_data
 GROUP BY Result;</pre>
       </div>
+
+      <div class="card">
+        <h4 style="margin:0 0 8px 0;color:#333;font-size:14px;">Play Cleanliness Query (cleanliness.csv)</h4>
+        <pre style="background:#f5f5f5;padding:12px;border-radius:4px;overflow-x:auto;font-size:11px;line-height:1.4;">SELECT 
+    CASE 
+        WHEN "12_Percent_Score" < "Opp_12_Percent_Score" THEN 'Cleaner Than Opponent' 
+        ELSE 'Dirtier Than Opponent' 
+    END AS Relative_Performance,
+    COUNT(*) AS Games,
+    SUM(CASE WHEN Result = 'W' THEN 1 ELSE 0 END) AS Wins,
+    ROUND(AVG(CASE WHEN Result = 'W' THEN 1.0 ELSE 0.0 END) * 100, 1) AS Win_Percentage
+FROM browns_opp_data
+GROUP BY Relative_Performance;</pre>
+      </div>
     </div>
 
     <div style="margin-top:48px;padding-top:24px;border-top:2px solid #ddd;">
@@ -302,6 +381,38 @@ function toInt(v){
   return Math.round(n);
 }
 
+let allData = [];
+let currentWeekIndex = 0;
+
+function displayWeek(weekIndex) {
+  if(weekIndex < 0 || weekIndex >= allData.length) return;
+  currentWeekIndex = weekIndex;
+  const game = allData[weekIndex];
+  
+  document.getElementById('current-week').textContent = game.Week;
+  document.getElementById('week-opponent').textContent = game.Opponent;
+  document.getElementById('week-result').textContent = game.Result;
+  document.getElementById('week-browns-12').textContent = game.Browns_12;
+  document.getElementById('week-opp-12').textContent = game.Opp_12;
+  document.getElementById('week-prediction').textContent = game.RulePrediction;
+  document.getElementById('week-status').textContent = game.RuleValidText;
+  document.getElementById('week-status').style.color = game.RuleValid ? '#4CAF50' : '#FF6B6B';
+  document.getElementById('week-slider').value = weekIndex + 1;
+}
+
+function nextWeek() {
+  if(currentWeekIndex < allData.length - 1) displayWeek(currentWeekIndex + 1);
+}
+
+function previousWeek() {
+  if(currentWeekIndex > 0) displayWeek(currentWeekIndex - 1);
+}
+
+function goToWeek(weekNum) {
+  const index = parseInt(weekNum) - 1;
+  displayWeek(index);
+}
+
 async function loadData(){
   const possiblePaths = ['noisy_12p_rule.csv', './noisy_12p_rule.csv', '/noisy_12p_rule.csv'];
   let csv = null;
@@ -354,12 +465,17 @@ async function loadData(){
     };
   });
 
+  allData = data;
+  displayWeek(0);
+
   document.getElementById('status').style.display = 'none';
+  document.getElementById('week-navigator').style.display = 'block';
   document.getElementById('summary-section').style.display = 'block';
   document.getElementById('stats-row').style.display = 'grid';
   document.getElementById('charts-grid').style.display = 'grid';
   document.getElementById('charts-grid2').style.display = 'grid';
   document.getElementById('winning-stats-grid').style.display = 'grid';
+  document.getElementById('cleanliness-grid').style.display = 'grid';
   document.getElementById('bottom-grid').style.display = 'grid';
 
   const validCount = data.filter(d=>d.RuleValid).length;
@@ -370,7 +486,7 @@ async function loadData(){
   const avgOppScore = Math.round(data.reduce((s,d)=>s+d.Opp_12,0)/data.length);
 
   // Executive Summary with Winning Stats
-  const summaryText = `The 12% Rule analysis reveals a <strong>${accuracy}%</strong> accuracy rate in predicting game outcomes for the 2024 season (${validCount} out of ${data.length} games correctly predicted). The Browns averaged a 12% score of <strong>${avgBrownsScore}</strong> compared to opponents' average of <strong>${avgOppScore}</strong>. <strong>Critically,</strong> winning games showed dramatically reduced defensive pressures: <strong>1.7 average sacks and 1.3 turnovers</strong> per win versus <strong>4.4 sacks and 2.1 turnovers</strong> per loss—a stark 2.6× difference in sack rate. This reinforces the 12% Rule's premise that fewer critical errors correlate with victories. However, the Browns recorded slightly higher penalty averages in wins (9.3 vs 6.5), suggesting that maintaining discipline under pressure while limiting sacks and turnovers is key to success. With only ${brownsWins} wins out of ${data.length} games, the data suggests the 12% Rule shows moderate-to-strong effectiveness at distinguishing winning from losing performances when sacks and turnovers are minimized. <strong>Data Source:</strong> Game statistics were scraped from <a href="https://www.pro-football-reference.com/teams/cle/2024/gamelog" target="_blank" style="color:#1976d2;text-decoration:none">Pro Football Reference (2024 Browns Game Log)</a>.`;
+  const summaryText = `The 12% Rule analysis reveals a <strong>${accuracy}%</strong> accuracy rate in predicting game outcomes for the 2024 season (${validCount} out of ${data.length} games correctly predicted). The Browns averaged a 12% score of <strong>${avgBrownsScore}</strong> compared to opponents' average of <strong>${avgOppScore}</strong>. <strong>Critically,</strong> winning games showed dramatically reduced defensive pressures: <strong>1.7 average sacks and 1.3 turnovers</strong> per win versus <strong>4.4 sacks and 2.1 turnovers</strong> per loss—a stark 2.6× difference in sack rate. This reinforces the 12% Rule's premise that fewer critical errors correlate with victories. However, the Browns recorded slightly higher penalty averages in wins (9.3 vs 6.5), suggesting that maintaining discipline under pressure while limiting sacks and turnovers is key to success. <strong>Play Cleanliness Analysis:</strong> When the Browns played cleaner (lower 12% score) than their opponent, they won only 16.7% of those games, while in games where they played dirtier, they still only won 18.2%. This counterintuitive finding suggests that relative cleanliness alone is not a strong predictor—external factors, execution, and opponent strength play equally critical roles in determining outcomes. With only ${brownsWins} wins out of ${data.length} games, the data suggests the 12% Rule shows moderate-to-strong effectiveness at distinguishing winning from losing performances when sacks and turnovers are minimized. <strong>Data Source:</strong> Game statistics were scraped from <a href="https://www.pro-football-reference.com/teams/cle/2024/gamelog" target="_blank" style="color:#1976d2;text-decoration:none">Pro Football Reference (2024 Browns Game Log)</a>.`;
   document.getElementById('summary-text').innerHTML = summaryText;
 
   document.getElementById('total-games').textContent = data.length;
@@ -392,7 +508,7 @@ async function loadData(){
     name: 'Rule Valid',
     text: validGames.map(d=>`Week ${d.Week} vs ${d.Opponent}<br>Rule: ${d.RulePrediction}, Actual: ${d.Result}<br>✓ VALID`),
     hovertemplate: '<b>%{text}</b><br>Browns: %{x}, Opp: %{y}<extra></extra>',
-    marker:{size:12,color:'#2ecc71',symbol:'circle',line:{width:2,color:'darkgreen'}}
+    marker:{size:12,color:'#2ecc71',symbol:'circle',line:{width:2,color:'#1a5c1a'}}
   };
   
   const scatterInvalid = {
@@ -402,11 +518,11 @@ async function loadData(){
     name: 'Rule Invalid',
     text: invalidGames.map(d=>`Week ${d.Week} vs ${d.Opponent}<br>Rule: ${d.RulePrediction}, Actual: ${d.Result}<br>✗ INVALID`),
     hovertemplate: '<b>%{text}</b><br>Browns: %{x}, Opp: %{y}<extra></extra>',
-    marker:{size:12,color:'#e74c3c',symbol:'x',line:{width:2,color:'darkred'}}
+    marker:{size:12,color:'#e74c3c',symbol:'x',line:{width:2,color:'#8B0000'}}
   };
 
-  const ref = {x:[0, maxVal], y:[0, maxVal], mode:'lines', name:'Equal Score', line:{dash:'dash',color:'#999'}, hoverinfo:'skip'};
-  Plotly.newPlot('scatter',[scatterValid, scatterInvalid, ref],{xaxis:{title:'Browns 12%'}, yaxis:{title:'Opp 12%'}, margin:{t:40}, legend:{x:0,y:1}}, {transition: {duration: 500}});
+  const ref = {x:[0, maxVal], y:[0, maxVal], mode:'lines', name:'Equal Score', line:{dash:'dash',color:'#FF6600'}, hoverinfo:'skip'};
+  Plotly.newPlot('scatter',[scatterValid, scatterInvalid, ref],{xaxis:{title:'Browns 12%'}, yaxis:{title:'Opp 12%'}, margin:{t:40}, legend:{x:0,y:1}, paper_bgcolor:'#fafaf8', plot_bgcolor:'white'}, {transition: {duration: 500}});
 
   // Validity pie chart
   const validityTrace = {
@@ -419,20 +535,20 @@ async function loadData(){
     textinfo: 'label+value+percent',
     hovertemplate: '<b>%{label}</b><br>Count: %{value}<br>Percent: %{percent}<extra></extra>'
   };
-  Plotly.newPlot('validity',[validityTrace],{margin:{t:20}}, {transition: {duration: 500}});
+  Plotly.newPlot('validity',[validityTrace],{margin:{t:20}, paper_bgcolor:'#fafaf8'}, {transition: {duration: 500}});
 
   // Weekly comparison
   const weeks = data.map(d=>d.Week);
-  const trace1 = {x:weeks, y:data.map(d=>d.Browns_12), name:'Browns 12%', type:'bar', marker:{color:'#8B4513'}};
-  const trace2 = {x:weeks, y:data.map(d=>d.Opp_12), name:'Opp 12%', type:'bar', marker:{color:'#FFB6C1'}};
-  Plotly.newPlot('weekly',[trace1,trace2],{barmode:'group', xaxis:{title:'Week'}, yaxis:{title:'12% Score'}, margin:{t:40}}, {transition: {duration: 500}});
+  const trace1 = {x:weeks, y:data.map(d=>d.Browns_12), name:'Browns 12%', type:'bar', marker:{color:'#311C15'}};
+  const trace2 = {x:weeks, y:data.map(d=>d.Opp_12), name:'Opp 12%', type:'bar', marker:{color:'#FF6600'}};
+  Plotly.newPlot('weekly',[trace1,trace2],{barmode:'group', xaxis:{title:'Week'}, yaxis:{title:'12% Score'}, margin:{t:40}, paper_bgcolor:'#fafaf8', plot_bgcolor:'white'}, {transition: {duration: 500}});
 
   // Distribution
   const winScores = data.filter(d=>d.Result==='W').map(d=>d.Browns_12);
   const lossScores = data.filter(d=>d.Result==='L').map(d=>d.Browns_12);
-  const h1 = {x:winScores, name:'Wins', type:'histogram', opacity:0.7, marker:{color:'green'}, nbinsx:6};
-  const h2 = {x:lossScores, name:'Losses', type:'histogram', opacity:0.7, marker:{color:'red'}, nbinsx:6};
-  Plotly.newPlot('distribution',[h1,h2],{barmode:'overlay', xaxis:{title:'Browns 12%'}, yaxis:{title:'Count'}, margin:{t:40}}, {transition: {duration: 500}});
+  const h1 = {x:winScores, name:'Wins', type:'histogram', opacity:0.7, marker:{color:'#2ecc71'}, nbinsx:6};
+  const h2 = {x:lossScores, name:'Losses', type:'histogram', opacity:0.7, marker:{color:'#e74c3c'}, nbinsx:6};
+  Plotly.newPlot('distribution',[h1,h2],{barmode:'overlay', xaxis:{title:'Browns 12%'}, yaxis:{title:'Count'}, margin:{t:40}, paper_bgcolor:'#fafaf8', plot_bgcolor:'white'}, {transition: {duration: 500}});
 
   // Load Winning Stats CSV
   async function loadWinningStats(){
@@ -466,10 +582,62 @@ async function loadData(){
       const traceWins = {x:stats, y:[winData[1], winData[2], winData[3]], name:'Wins', type:'bar', marker:{color:'#2ecc71'}};
       const traceLosses = {x:stats, y:[lossData[1], lossData[2], lossData[3]], name:'Losses', type:'bar', marker:{color:'#e74c3c'}};
       
-      Plotly.newPlot('winning-stats',[traceWins, traceLosses],{barmode:'group', xaxis:{title:'Statistic'}, yaxis:{title:'Average Per Game'}, margin:{t:40}}, {transition: {duration: 500}});
+      Plotly.newPlot('winning-stats',[traceWins, traceLosses],{barmode:'group', xaxis:{title:'Statistic'}, yaxis:{title:'Average Per Game'}, margin:{t:40}, paper_bgcolor:'#fafaf8', plot_bgcolor:'white'}, {transition: {duration: 500}});
     }
   }
   loadWinningStats();
+
+  // Load Cleanliness CSV
+  async function loadCleanlinessStats(){
+    const paths = ['cleanliness.csv', './cleanliness.csv', '/cleanliness.csv'];
+    let csv = null;
+    for(const path of paths){
+      try{
+        const response = await fetch(path);
+        if(response.ok){
+          csv = await response.text();
+          console.log(`Loaded cleanliness from: ${path}`);
+          break;
+        }
+      }catch(e){
+        console.log(`Failed to load ${path}`);
+      }
+    }
+    if(csv){
+      const lines = csv.trim().split(/\r?\n/);
+      const headers = lines[0].split(',').map(h=>h.trim());
+      
+      // Parse data rows
+      let cleanerData = null, dirtierData = null;
+      for(let i = 1; i < lines.length; i++){
+        const parts = lines[i].split(',');
+        const perf = parts[0].trim();
+        const games = parseInt(parts[1]);
+        const wins = parseInt(parts[2]);
+        const winPct = parseFloat(parts[3]);
+        
+        if(perf === 'Cleaner Than Opponent') cleanerData = {games, wins, winPct};
+        else if(perf === 'Dirtier Than Opponent') dirtierData = {games, wins, winPct};
+      }
+      
+      const categories = ['Cleaner Than Opponent', 'Dirtier Than Opponent'];
+      const traceGames = {x:categories, y:[cleanerData.games, dirtierData.games], name:'Total Games', type:'bar', marker:{color:'#311C15'}};
+      const traceWins = {x:categories, y:[cleanerData.wins, dirtierData.wins], name:'Wins', type:'bar', marker:{color:'#2ecc71'}};
+      const traceWinPct = {x:categories, y:[cleanerData.winPct, dirtierData.winPct], yaxis:'y2', name:'Win %', type:'scatter', mode:'lines+markers', line:{color:'#FF6600',width:3}, marker:{size:8}};
+      
+      Plotly.newPlot('cleanliness-chart',[traceGames, traceWins, traceWinPct],{
+        barmode:'group',
+        xaxis:{title:'Relative Performance'},
+        yaxis:{title:'Count',side:'left'},
+        yaxis2:{title:'Win %',overlaying:'y',side:'right'},
+        margin:{t:40,r:80},
+        hovermode:'x unified',
+        paper_bgcolor:'#fafaf8',
+        plot_bgcolor:'white'
+      }, {transition: {duration: 500}});
+    }
+  }
+  loadCleanlinessStats();
 
   // Table
   const tbl = document.getElementById('data-table');

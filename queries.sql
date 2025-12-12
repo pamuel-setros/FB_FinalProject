@@ -14,6 +14,8 @@ SELECT
 FROM browns_opp_data
 GROUP BY Rule_Status;
 
+
+
 SELECT 
     Result as Outcome,
     ROUND(AVG(Sacks), 1) as Avg_Sacks,
@@ -21,6 +23,8 @@ SELECT
     ROUND(AVG(Penalties), 1) as Avg_Penalties
 FROM browns_opp_data
 GROUP BY Result;
+
+
 
 -- Randomize Browns Drops (Amari Cooper Era vs Post-Trade)
 -- Week 1-6: Randomly 4 or 5 drops
@@ -74,3 +78,16 @@ SELECT
     END AS "Opp Validity"
 FROM browns_opp_data
 ORDER BY Week;
+
+
+
+SELECT 
+    CASE 
+        WHEN "12_Percent_Score" < "Opp_12_Percent_Score" THEN 'Cleaner Than Opponent' 
+        ELSE 'Dirtier Than Opponent' 
+    END AS Relative_Performance,
+    COUNT(*) AS Games,
+    SUM(CASE WHEN Result = 'W' THEN 1 ELSE 0 END) AS Wins,
+    ROUND(AVG(CASE WHEN Result = 'W' THEN 1.0 ELSE 0.0 END) * 100, 1) AS Win_Percentage
+FROM browns_opp_data
+GROUP BY Relative_Performance;
